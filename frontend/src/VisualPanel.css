@@ -1,0 +1,252 @@
+.visual-panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.visual-panel.empty {
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-hint {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px;
+}
+
+.empty-icon {
+  font-size: 20px;
+  color: var(--text-dim);
+}
+
+.empty-hint p {
+  font-size: 13px;
+  color: var(--text-dim);
+  max-width: 200px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* Slide container */
+.slide {
+  animation: slide-in 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  gap: 14px;
+}
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateX(10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.slide-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.slide-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.slide-close {
+  font-size: 12px;
+  color: var(--text-dim);
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+.slide-close:hover { background: var(--bg-card2); color: var(--text); }
+
+/* Cards (services / pricing) */
+.slide-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.slide-card {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+.card-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.card-duration {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.card-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.slide-note {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-style: italic;
+  padding: 6px 2px 0;
+}
+
+/* Slide-specific accent colors */
+.slide-purple .slide-card { border-color: rgba(124,106,247,0.15); }
+.slide-purple .card-name  { color: var(--accent-light); }
+.slide-teal .slide-card   { border-color: rgba(45,212,191,0.15); }
+.slide-teal .card-name    { color: var(--teal); }
+.slide-amber .slide-card  { border-color: rgba(245,166,35,0.15); }
+.slide-coral .slide-card  { border-color: rgba(240,96,87,0.15); }
+.slide-blue .slide-card   { border-color: rgba(96,165,250,0.15); }
+
+/* Process steps */
+.slide-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.slide-step {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.step-num {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--amber);
+  background: var(--amber-bg);
+  border: 1px solid rgba(245,166,35,0.2);
+  border-radius: 4px;
+  padding: 2px 5px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  font-variant-numeric: tabular-nums;
+}
+
+.step-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.step-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+/* Case studies */
+.slide-cases {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.slide-case {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px solid rgba(240,96,87,0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.case-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.case-client {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.case-tag {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.case-result {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* Team */
+.slide-team {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.slide-member {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+
+.member-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent-bg);
+  border: 1px solid rgba(124,106,247,0.2);
+  color: var(--accent-light);
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.member-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.member-role {
+  font-size: 11px;
+  color: var(--accent-light);
+  margin-top: 1px;
+}
+
+.member-bg {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}

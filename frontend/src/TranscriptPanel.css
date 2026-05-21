@@ -1,0 +1,50 @@
+.transcript-panel {
+  width: 100%;
+  max-width: 480px;
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.transcript-panel.empty {
+  align-items: center;
+}
+
+.transcript-empty {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+.transcript-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: entry-in 0.2s ease;
+}
+
+@keyframes entry-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.entry-speaker {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.entry-aryan .entry-speaker { color: var(--accent-light); }
+.entry-you   .entry-speaker { color: var(--text-dim); }
+
+.entry-text {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.entry-aryan .entry-text { color: var(--text); }

@@ -1,0 +1,134 @@
+.lead-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lead-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lead-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.lead-progress {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.lead-progress-bar {
+  height: 3px;
+  background: var(--bg-card2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.lead-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.lead-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lead-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  transition: border-color 0.3s, background 0.3s;
+}
+
+.lead-field.filled {
+  border-color: rgba(124,106,247,0.2);
+  background: rgba(124,106,247,0.05);
+}
+
+.field-icon {
+  font-size: 13px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.field-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.field-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.field-value {
+  font-size: 13px;
+  color: var(--text);
+  word-break: break-word;
+  animation: pop-in 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.field-placeholder {
+  font-size: 12px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.lead-notes, .lead-summary {
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card2);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.notes-text, .summary-text {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.lead-finalized {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--green);
+  background: var(--green-bg);
+  border: 1px solid rgba(62,207,142,0.2);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  animation: pop-in 0.3s ease;
+}
+
+.finalized-icon {
+  font-size: 14px;
+}
