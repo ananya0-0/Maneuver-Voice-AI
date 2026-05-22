@@ -18,3 +18,25 @@ agent/leads.json
 # OS
 .DS_Store
 Thumbs.db
+
+# Windows OS files
+desktop.ini
+ehthumbs.db
+$RECYCLE.BIN/
+
+# Python cache (broader catch)
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+*.pyd
+
+# Ollama models (very large, never commit)
+*.gguf
+*.bin
+
+# Log files
+*.log
+logs/
+
+# Docker override files
+docker-compose.override.yml
