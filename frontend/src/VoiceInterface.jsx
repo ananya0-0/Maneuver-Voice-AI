@@ -138,9 +138,9 @@ export default function VoiceInterface({ onHangUp }) {
         <div className="center-panel">
           <AgentOrb state={displayState} />
           <div className="founder-id">
-            <div className="founder-avatar">A</div>
+            <div className="founder-avatar">H</div>
             <div>
-              <p className="founder-name">Aryan Mehta</p>
+              <p className="founder-name">Husain Topiwala</p>
               <p className="founder-role">Founder, Maneuver</p>
             </div>
           </div>

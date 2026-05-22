@@ -34,51 +34,56 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# ── Paths ─────────────────────────────────────────────────────────────────────
+# Paths 
 BASE_DIR = pathlib.Path(__file__).parent
 KB_PATH = BASE_DIR / "knowledge_base.md"
 LEADS_PATH = BASE_DIR / "leads.json"
 
-# ── Load knowledge base once at startup ───────────────────────────────────────
+# Load knowledge base once at startup 
 KNOWLEDGE_BASE = KB_PATH.read_text(encoding="utf-8")
 
-# ── System prompt ─────────────────────────────────────────────────────────────
-SYSTEM_PROMPT = f"""You are Aryan Mehta, founder of Maneuver — a product design and engineering studio.
+# System prompt 
+SYSTEM_PROMPT = f"""You are Husain Topiwala, founder of Maneuver — an AI strategy and implementation firm based in the UAE (maneuver.ae).
 You're on a real-time voice call with someone who just landed on the Maneuver website and clicked "Talk to Founder".
 
+Your background (use naturally, don't recite it):
+- Previously at JP Morgan, Vanguard, and Deloitte leading digital transformation
+- Founding team at Think41 — built agentic AI systems and multimodal platforms from 0 to 1
+- Co-founded SleevesUp's India practice, scaled it from 1 to 35 people
+- Started Maneuver because SMB founders kept getting priced out of the same AI thinking that drives Fortune 500 outcomes
+
 Your personality:
-- Warm, direct, and confident — like a founder who's done hundreds of these calls
-- You ask sharp questions but never sound like a form-filling exercise
-- You're genuinely curious about what people are building
-- You speak conversationally, in short sentences. No bullet points, no lists — you're talking, not writing
-- Occasionally you say things like "that's interesting" or "tell me more" but you don't overdo it
-- You're honest about what Maneuver is good at and where you're probably not the right fit
+- Warm, direct, and confident — someone who's been in enterprise boardrooms and startup trenches
+- You ask sharp questions but never sound like you're filling a form
+- Genuinely curious about people's operations and where the real bottlenecks are
+- You speak conversationally, in short sentences. No lists, no bullet points — you're talking, not writing
+- You're honest: if AI isn't the right move for someone yet, you'll say so on the call
+- You don't oversell — the firm's reputation is built on telling people the truth
 
 Your two modes:
 
 MODE 1 — DISCOVERY (default when call starts)
 Your goal is to naturally uncover:
 1. Who they are (name, role)
-2. What company they're from
-3. What they're building or trying to solve
-4. The specific problem they're running into
-5. Their timeline (when do they need this done)
-6. Their budget (don't avoid this — ask it naturally, like "are you working with a budget in mind?")
+2. What business/company they run
+3. What industry they're in
+4. The operational problem or bottleneck they're dealing with
+5. Their timeline
+6. Their budget (ask naturally: "do you have a rough budget in mind for this?")
 
-Don't ask all these at once. Weave them into a real conversation.
-Start every call with: "Hey! This is Aryan — glad you reached out. What are you working on?"
+Don't fire all these at once. Let it flow like a real conversation.
+Start every call with: "Hey, this is Husain — glad you made it. Tell me what's going on in the business."
 
-As you learn each piece of information, call the update_lead_field tool immediately.
+Call update_lead_field as soon as you learn each piece of information — don't batch them.
 
 MODE 2 — Q&A (when they ask about Maneuver)
-If at any point the user shifts to asking about what Maneuver does, answer from the knowledge base below.
-When answering about services, pricing, process, case studies, or team — also call the appropriate
+If the visitor asks about what Maneuver does, answer from the knowledge base below.
+When answering about services, process, case studies, or the team — also call the appropriate
 show_*_slide tool so the UI updates visually for them.
 
-After answering their question, gently steer back to discovery: "Curious — what made you look for a team like ours right now?"
+After answering, steer back to discovery: "What made you come across us — is there something specific in the business you're trying to fix?"
 
-When the conversation feels complete (you have most discovery fields and they seem ready to wrap up),
-call finalize_lead with a summary.
+When discovery feels complete and the call is wrapping up naturally, call finalize_lead with a summary.
 
 ---
 KNOWLEDGE BASE:
@@ -86,15 +91,16 @@ KNOWLEDGE BASE:
 ---
 
 IMPORTANT RULES:
-- Keep responses SHORT when speaking. 2-4 sentences max per turn. You're on a voice call.
-- Never say "As an AI" or break character.
+- Keep responses SHORT. 2-4 sentences max per turn. Voice call, not a pitch deck.
+- Never say "As an AI" or break character under any circumstances.
 - If someone is rude, stay calm and professional but don't be a pushover.
-- If there's silence, after 5 seconds say "Still there?" naturally.
-- Never read out lists or bullet points — convert them to natural speech.
+- If there's silence, after a few seconds say "Still with me?" naturally.
+- Never read out lists or bullets — convert everything to natural spoken sentences.
+- Maneuver is UAE-based, serves global clients. Reference this context when relevant.
 """
 
 
-# ── Lead persistence ───────────────────────────────────────────────────────────
+# Lead persistence 
 def save_lead(lead: dict):
     """Append lead to leads.json"""
     leads = []
@@ -109,7 +115,7 @@ def save_lead(lead: dict):
     logger.info(f"Lead saved to {LEADS_PATH}")
 
 
-# ── RPC sender helper ──────────────────────────────────────────────────────────
+# RPC sender helper 
 class RPCSender:
     """Sends RPC messages to all participants in the room (i.e., the frontend)."""
 
@@ -129,7 +135,7 @@ class RPCSender:
             logger.warning(f"RPC send failed: {e}")
 
 
-# ── Agent entrypoint ───────────────────────────────────────────────────────────
+# Agent entrypoint 
 async def entrypoint(ctx: JobContext):
     await ctx.connect(auto_subscribe=AutoSubscribe.AUDIO_ONLY)
 
@@ -145,7 +151,7 @@ async def entrypoint(ctx: JobContext):
     # Build tool list
     tools = build_tools(lead_store, rpc_sender)
 
-    # ── STT setup ──────────────────────────────────────────────────────────────
+    # STT setup
     use_whisper = os.getenv("USE_WHISPER", "false").lower() == "true"
     if use_whisper:
         # Whisper runs fully locally — no API key needed
@@ -158,13 +164,13 @@ async def entrypoint(ctx: JobContext):
             language="en-US",
         )
 
-    # ── LLM setup (Ollama, fully local) ───────────────────────────────────────
+    # LLM setup (Ollama, fully local) 
     livekit_llm = openai.LLM.with_ollama(
         model=os.getenv("OLLAMA_MODEL", "llama3"),
         base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
     )
 
-    # ── TTS setup ──────────────────────────────────────────────────────────────
+    # TTS setup 
     tts_provider = os.getenv("TTS_PROVIDER", "kokoro")
     if tts_provider == "kokoro":
         from livekit.plugins import kokoro
@@ -173,10 +179,10 @@ async def entrypoint(ctx: JobContext):
         # Fallback: OpenAI TTS (requires OPENAI_API_KEY)
         tts = openai.TTS(voice="alloy")
 
-    # ── VAD (Voice Activity Detection) ────────────────────────────────────────
+    # VAD (Voice Activity Detection)
     vad = silero.VAD.load()
 
-    # ── Assemble the pipeline ─────────────────────────────────────────────────
+    # Assemble the pipeline 
     initial_ctx = llm.ChatContext().append(role="system", text=SYSTEM_PROMPT)
 
     assistant = VoiceAssistant(
@@ -192,7 +198,7 @@ async def entrypoint(ctx: JobContext):
         allow_interruptions=True,
     )
 
-    # ── Agent state → RPC for UI indicator ────────────────────────────────────
+    # Agent state → RPC for UI indicator 
     @assistant.on("agent_started_speaking")
     def on_speaking():
         asyncio.ensure_future(rpc.send("agent_state", {"state": "speaking"}))
@@ -209,13 +215,13 @@ async def entrypoint(ctx: JobContext):
     def on_interrupted():
         asyncio.ensure_future(rpc.send("agent_state", {"state": "listening"}))
 
-    # ── Start the assistant ───────────────────────────────────────────────────
+    # Start the assistant 
     assistant.start(ctx.room)
 
     # Greet the user as soon as they connect
     await asyncio.sleep(1.5)
     await assistant.say(
-        "Hey! This is Aryan — glad you reached out. What are you working on?",
+        "Hey, this is Husain — glad you made it. Tell me what's going on in the business.",
         allow_interruptions=True,
     )
 
@@ -223,7 +229,7 @@ async def entrypoint(ctx: JobContext):
     await asyncio.sleep(3600)
 
 
-# ── Worker bootstrap ───────────────────────────────────────────────────────────
+# Worker bootstrap 
 def prewarm(proc: JobProcess):
     proc.userdata["vad"] = silero.VAD.load()
 

@@ -40,8 +40,8 @@ export default function App() {
           <div className="logo-mark">M</div>
           <h1 className="landing-title">Talk to the founder</h1>
           <p className="landing-sub">
-            Skip the contact form. Have a real conversation with Aryan, founder of Maneuver.
-            Tell him what you're building — he'll tell you if we can help.
+            Skip the contact form. Have a real conversation with Husain, founder of Maneuver.
+            Tell him what's happening in your business — he'll tell you honestly if AI can help.
           </p>
           {error && <p className="error-msg">{error}. Make sure the backend server is running.</p>}
           <button
