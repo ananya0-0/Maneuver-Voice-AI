@@ -62,7 +62,7 @@ export default function VoiceInterface({ onHangUp }) {
             {
               id: seg.id,
               text: seg.text,
-              speaker: isAgent ? 'aryan' : 'you',
+              speaker: isAgent ? 'husain' : 'you',
               timestamp: Date.now(),
             },
           ])

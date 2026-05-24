@@ -21,7 +21,7 @@ export default function TranscriptPanel({ entries }) {
       {entries.map((entry) => (
         <div key={entry.id} className={`transcript-entry entry-${entry.speaker}`}>
           <span className="entry-speaker">
-            {entry.speaker === 'aryan' ? 'Aryan' : 'You'}
+            {entry.speaker === 'husain' ? 'Husain' : 'You'}
           </span>
           <p className="entry-text">{entry.text}</p>
         </div>

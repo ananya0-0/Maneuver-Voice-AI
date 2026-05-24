@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   livekit:
     image: livekit/livekit-server:latest
@@ -11,4 +9,4 @@ services:
       --dev
       --bind 0.0.0.0
     environment:
-      - LIVEKIT_KEYS=devkey:secret
+      LIVEKIT_KEYS: "devkey: secret"

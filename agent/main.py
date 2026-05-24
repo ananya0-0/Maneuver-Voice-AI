@@ -1,5 +1,6 @@
 """
 main.py — Maneuver "Talk to Founder" Voice AI Agent
+Written for livekit-agents v1.5.x
 
 Pipeline: Microphone → LiveKit → STT → LLM (with tools) → TTS → LiveKit → Browser
 
@@ -22,9 +23,10 @@ from livekit.agents import (
     JobProcess,
     WorkerOptions,
     cli,
-    llm,
+    Agent,
+    AgentSession,
+    RoomInputOptions,
 )
-from livekit.agents.voice_assistant import VoiceAssistant
 from livekit.plugins import deepgram, openai, silero
 
 from tools import build_tools
@@ -34,19 +36,19 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Paths 
+# ── Paths ──────────────────────────────────────────────────────────────────────
 BASE_DIR = pathlib.Path(__file__).parent
-KB_PATH = BASE_DIR / "knowledge_base.md"
+KB_PATH  = BASE_DIR / "knowledge_base.md"
 LEADS_PATH = BASE_DIR / "leads.json"
 
-# Load knowledge base once at startup 
+# ── Load knowledge base once at startup ───────────────────────────────────────
 KNOWLEDGE_BASE = KB_PATH.read_text(encoding="utf-8")
 
-# System prompt 
+# ── System prompt ──────────────────────────────────────────────────────────────
 SYSTEM_PROMPT = f"""You are Husain Topiwala, founder of Maneuver — an AI strategy and implementation firm based in the UAE (maneuver.ae).
 You're on a real-time voice call with someone who just landed on the Maneuver website and clicked "Talk to Founder".
 
-Your background (use naturally, don't recite it):
+Your background (use naturally, don't recite it like a CV):
 - Previously at JP Morgan, Vanguard, and Deloitte leading digital transformation
 - Founding team at Think41 — built agentic AI systems and multimodal platforms from 0 to 1
 - Co-founded SleevesUp's India practice, scaled it from 1 to 35 people
@@ -65,7 +67,7 @@ Your two modes:
 MODE 1 — DISCOVERY (default when call starts)
 Your goal is to naturally uncover:
 1. Who they are (name, role)
-2. What business/company they run
+2. What business or company they run
 3. What industry they're in
 4. The operational problem or bottleneck they're dealing with
 5. Their timeline
@@ -94,15 +96,14 @@ IMPORTANT RULES:
 - Keep responses SHORT. 2-4 sentences max per turn. Voice call, not a pitch deck.
 - Never say "As an AI" or break character under any circumstances.
 - If someone is rude, stay calm and professional but don't be a pushover.
-- If there's silence, after a few seconds say "Still with me?" naturally.
 - Never read out lists or bullets — convert everything to natural spoken sentences.
 - Maneuver is UAE-based, serves global clients. Reference this context when relevant.
 """
 
 
-# Lead persistence 
+# ── Lead persistence ───────────────────────────────────────────────────────────
 def save_lead(lead: dict):
-    """Append lead to leads.json"""
+    """Append or update lead in leads.json"""
     leads = []
     if LEADS_PATH.exists():
         try:
@@ -115,9 +116,9 @@ def save_lead(lead: dict):
     logger.info(f"Lead saved to {LEADS_PATH}")
 
 
-# RPC sender helper 
+# ── RPC sender ─────────────────────────────────────────────────────────────────
 class RPCSender:
-    """Sends RPC messages to all participants in the room (i.e., the frontend)."""
+    """Sends data messages to the frontend via LiveKit data channel."""
 
     def __init__(self, room: rtc.Room):
         self.room = room
@@ -135,7 +136,28 @@ class RPCSender:
             logger.warning(f"RPC send failed: {e}")
 
 
-# Agent entrypoint 
+# ── Agent class (v1.x style) ───────────────────────────────────────────────────
+class ManeuverFounderAgent(Agent):
+    def __init__(self, lead_store: dict, rpc_sender_fn):
+        # Build tools bound to this session's lead store and RPC sender
+        tools = build_tools(lead_store, rpc_sender_fn)
+        super().__init__(
+            instructions=SYSTEM_PROMPT,
+            tools=tools,
+        )
+        self._rpc = rpc_sender_fn
+
+    async def on_enter(self):
+        """Called when the agent session starts — greet the user."""
+        await asyncio.sleep(1.0)
+        await self.session.say(
+            "Hey, this is Husain — glad you made it. "
+            "Tell me what's going on in the business.",
+            allow_interruptions=True,
+        )
+
+
+# ── Entrypoint ─────────────────────────────────────────────────────────────────
 async def entrypoint(ctx: JobContext):
     await ctx.connect(auto_subscribe=AutoSubscribe.AUDIO_ONLY)
 
@@ -144,19 +166,14 @@ async def entrypoint(ctx: JobContext):
 
     async def rpc_sender(method: str, payload: dict):
         await rpc.send(method, payload)
-        # Also persist lead updates in real time
         if method in ("update_lead_field", "lead_finalized"):
             save_lead(lead_store)
 
-    # Build tool list
-    tools = build_tools(lead_store, rpc_sender)
-
-    # STT setup
+    # ── STT ────────────────────────────────────────────────────────────────────
     use_whisper = os.getenv("USE_WHISPER", "false").lower() == "true"
     if use_whisper:
-        # Whisper runs fully locally — no API key needed
         from livekit.plugins.openai import STT as WhisperSTT
-        stt = WhisperSTT.with_groq(model="whisper-large-v3")
+        stt = WhisperSTT(model="whisper-1")
     else:
         stt = deepgram.STT(
             api_key=os.getenv("DEEPGRAM_API_KEY", ""),
@@ -164,72 +181,61 @@ async def entrypoint(ctx: JobContext):
             language="en-US",
         )
 
-    # LLM setup (Ollama, fully local) 
-    livekit_llm = openai.LLM.with_ollama(
+    # ── LLM (Ollama, local) ────────────────────────────────────────────────────
+    lm = openai.LLM(
         model=os.getenv("OLLAMA_MODEL", "llama3"),
-        base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
+        base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434") + "/v1",
+        api_key="ollama",
+        max_completion_tokens=120,
+        temperature=0.7,
+        extra_body={
+            "num_ctx": 2048,
+            "keep_alive": "5m",
+        },
     )
 
-    # TTS setup 
-    tts_provider = os.getenv("TTS_PROVIDER", "kokoro")
-    if tts_provider == "kokoro":
-        from livekit.plugins import kokoro
-        tts = kokoro.TTS(voice="af_heart")
+    # ── TTS ────────────────────────────────────────────────────────────────────
+    tts_provider = os.getenv("TTS_PROVIDER", "deepgram")
+    if tts_provider == "deepgram":
+        from livekit.plugins.deepgram import TTS as DeepgramTTS
+        tts = DeepgramTTS(
+            api_key=os.getenv("DEEPGRAM_API_KEY", ""),
+            model="aura-orion-en",  # deep male voice
+        )
     else:
-        # Fallback: OpenAI TTS (requires OPENAI_API_KEY)
         tts = openai.TTS(voice="alloy")
 
-    # VAD (Voice Activity Detection)
+    # ── VAD ────────────────────────────────────────────────────────────────────
     vad = silero.VAD.load()
 
-    # Assemble the pipeline 
-    initial_ctx = llm.ChatContext().append(role="system", text=SYSTEM_PROMPT)
+    # ── Session state → RPC ────────────────────────────────────────────────────
+    agent = ManeuverFounderAgent(lead_store, rpc_sender)
 
-    assistant = VoiceAssistant(
-        vad=vad,
+    session = AgentSession(
         stt=stt,
-        llm=livekit_llm,
+        llm=lm,
         tts=tts,
-        chat_ctx=initial_ctx,
-        fnc_ctx=llm.FunctionContext(tools),
-        # How long of a silence (seconds) before the agent considers a turn complete
-        min_endpointing_delay=0.6,
-        # If the user starts speaking while agent is talking, stop and listen
-        allow_interruptions=True,
+        vad=vad,
+        turn_detection=None,  # uses VAD-based turn detection
     )
 
-    # Agent state → RPC for UI indicator 
-    @assistant.on("agent_started_speaking")
-    def on_speaking():
-        asyncio.ensure_future(rpc.send("agent_state", {"state": "speaking"}))
+    # Forward session state to frontend
+    @session.on("agent_state_changed")
+    def on_state_changed(ev):
+        state = str(ev.new_state).lower().replace("agentstate.", "")
+        asyncio.ensure_future(rpc.send("agent_state", {"state": state}))
 
-    @assistant.on("agent_stopped_speaking")
-    def on_stopped():
-        asyncio.ensure_future(rpc.send("agent_state", {"state": "listening"}))
-
-    @assistant.on("user_started_speaking")
-    def on_user_speaking():
-        asyncio.ensure_future(rpc.send("agent_state", {"state": "listening"}))
-
-    @assistant.on("agent_speech_interrupted")
-    def on_interrupted():
-        asyncio.ensure_future(rpc.send("agent_state", {"state": "listening"}))
-
-    # Start the assistant 
-    assistant.start(ctx.room)
-
-    # Greet the user as soon as they connect
-    await asyncio.sleep(1.5)
-    await assistant.say(
-        "Hey, this is Husain — glad you made it. Tell me what's going on in the business.",
-        allow_interruptions=True,
+    await session.start(
+        agent=agent,
+        room=ctx.room,
+        room_input_options=RoomInputOptions(),
     )
 
-    # Keep the agent alive for the duration of the call
+    # Keep alive for the duration of the call
     await asyncio.sleep(3600)
 
 
-# Worker bootstrap 
+# ── Worker bootstrap ───────────────────────────────────────────────────────────
 def prewarm(proc: JobProcess):
     proc.userdata["vad"] = silero.VAD.load()
 
